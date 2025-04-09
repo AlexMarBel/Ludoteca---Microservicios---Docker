@@ -1,0 +1,245 @@
+services:
+  tutorial-eureka:
+    build:
+      context: ./tutorialeureka
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - backend-network
+      - admin-network
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-eureka:8761/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3
+
+  tutorial-gateway:
+    build:
+      context: ./tutorialgateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - backend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-gateway:8080/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3
+
+  tutorial-category:
+    build:
+      context: ./tutorialcategory
+      dockerfile: Dockerfile
+    ports:
+      - "8091:8091"
+    networks:
+      - backend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+      tutorial-gateway:
+        condition: service_healthy
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-category:8091/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3
+
+  tutorial-author:
+    build:
+      context: ./tutorialauthor
+      dockerfile: Dockerfile
+    ports:
+      - "8092:8092"
+    networks:
+      - backend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+      tutorial-gateway:
+        condition: service_healthy
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-author:8092/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3
+
+  tutorial-game:
+    build:
+      context: ./tutorialgame
+      dockerfile: Dockerfile
+    ports:
+      - "8093:8093"
+    networks:
+      - backend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+      tutorial-gateway:
+        condition: service_healthy
+      tutorial-category:
+        condition: service_healthy
+      tutorial-author:
+        condition: service_healthy
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-game:8093/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3
+
+  tutorial-client:
+    build:
+      context: ./tutorialclient
+      dockerfile: Dockerfile
+    ports:
+      - "8094:8094"
+    networks:
+      - backend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+      tutorial-gateway:
+        condition: service_healthy
+      tutorial-category:
+        condition: service_healthy
+      tutorial-author:
+        condition: service_healthy
+      tutorial-game:
+        condition: service_healthy  
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-client:8094/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3    
+
+  tutorial-loan:
+    build:
+      context: ./tutorialloan
+      dockerfile: Dockerfile
+    ports:
+      - "8095:8095"
+    networks:
+      - backend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+      tutorial-gateway:
+        condition: service_healthy
+      tutorial-category:
+        condition: service_healthy
+      tutorial-author:
+        condition: service_healthy
+      tutorial-game:
+        condition: service_healthy
+      tutorial-client:
+        condition: service_healthy    
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-loan:8095/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3
+
+  tutorial-front:
+    build:
+      context: ./cliente
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    networks:
+      - frontend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+      tutorial-gateway:
+        condition: service_healthy
+      tutorial-category:
+        condition: service_healthy
+      tutorial-author:
+        condition: service_healthy
+      tutorial-game:
+        condition: service_healthy
+      tutorial-loan:
+        condition: service_healthy
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-front:4200/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3
+
+  tutorial-front2:
+    build:
+      context: ./cliente2
+      dockerfile: Dockerfile
+    ports:
+      - "4201:4200"
+    networks:
+      - frontend-network
+      - admin-network
+    depends_on:
+      tutorial-eureka:
+        condition: service_healthy
+      tutorial-gateway:
+        condition: service_healthy
+      tutorial-category:
+        condition: service_healthy
+      tutorial-author:
+        condition: service_healthy
+      tutorial-game:
+        condition: service_healthy
+      tutorial-loan:
+        condition: service_healthy  
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://tutorial-eureka:8761/eureka/
+    healthcheck:
+      test: "curl -f http://tutorial-front2:4200/actuator/health || exit 1"
+      interval: 40s
+      timeout: 10s
+      retries: 3    
+
+  cliente-agent:
+    image: alpine 
+    command: ["sh", "-c", "while true; do ping -c 1 tutorial-front; ping -c 1 tutorial-category; sleep 10; done;"]
+    networks:
+    - frontend-network    
+
+  admin-agent:
+    image: alpine
+    command: ["sh", "-c", "while true; do ping -c 1 tutorial-front; ping -c 1 tutorial-category; sleep 10; done;"]   
+    networks:
+    - admin-network     
+
+networks:
+  frontend-network:
+    driver: bridge
+  backend-network:
+    driver: bridge
+  admin-network:
+    driver: bridge
